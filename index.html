@@ -129,7 +129,7 @@ const T={piece:['🎵','Piece','#8e5bd6'],theory:['📖','Theory','#2d8fe0'],sca
 const ORD=Object.keys(T),today=new Date().getDay();
 let S={items:[],plan:[[],[],[],[],[],[],[]],cnt:{},notes:['','','','','','',''],time:[0,0,0,0,0,0,0],next:1,wheel:[],wk:weekStart(),hist:[],ui:{}};
 try{const x=JSON.parse(localStorage.getItem('practice2')||'null');if(x)S=Object.assign(S,x)}catch(e){}
-let sel=today,delId=0;
+let sel=today,delId=0,editId=0;
 const $=id=>document.getElementById(id);
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const save=()=>{try{localStorage.setItem('practice2',JSON.stringify(S))}catch(e){}};
@@ -157,10 +157,10 @@ function rNow(){
 function rLib(){
   const act=S.items.filter(i=>!i.retired).sort((a,b)=>ORD.indexOf(a.type)-ORD.indexOf(b.type)),ret=S.items.filter(i=>i.retired);
   let h=act.length?'':'<div class="empty">Add your first piece, scale or theory task above! 🎶</div>';
-  act.forEach(i=>{const t=T[i.type];
+  act.forEach(i=>{if(editId===i.id){h+=edRow(i);return}const t=T[i.type];
     h+=`<div class="lib" style="--c:${t[2]}"><div class="nm">${t[0]} ${esc(i.name)}<small>${t[1]}</small></div><div class="days">`+
      DN.map((n,d)=>`<button class="dy ${S.plan[d].includes(i.id)?'on':''}" title="${n}" onclick="tog(${i.id},${d})">${n[0]}</button>`).join('')+
-     `<button class="dy all ${S.plan.every(p=>p.includes(i.id))?'on':''}" title="Every day" onclick="allDays(${i.id})">All</button></div><button class="sm" onclick="retire(${i.id},true)">🏆 Retire</button></div>`});
+     `<button class="dy all ${S.plan.every(p=>p.includes(i.id))?'on':''}" title="Every day" onclick="allDays(${i.id})">All</button></div><div><button class="sm" onclick="edit(${i.id})">✏️ Edit</button> <button class="sm" onclick="retire(${i.id},true)">🏆 Retire</button></div></div>`});
   if(ret.length){h+='<h2 style="margin-top:18px">🏆 Retired music</h2><p class="meta">Finished with these — they are hidden from your days.</p>';
     ret.forEach(i=>{h+=`<div class="lib" style="--c:#999"><div class="nm">${T[i.type][0]} ${esc(i.name)}<small>${T[i.type][1]}</small></div><div><button class="sm" onclick="retire(${i.id},false)">↩ Bring back</button> <button class="sm" onclick="del(${i.id})">${delId==i.id?'Sure? Tap again':'🗑 Delete'}</button></div></div>`})}
   $('lib').innerHTML=h;
@@ -193,6 +193,9 @@ function go(d){setSel(d);window.scrollTo({top:$('now').offsetTop-10,behavior:'sm
 function adj(d,id,x){const k=d+'-'+id;S.cnt[k]=Math.max(0,cnt(d,id)+x);R()}
 function adjT(d,x){S.time[d]=Math.max(0,S.time[d]+x);R()}
 function tog(id,d){const p=S.plan[d],i=p.indexOf(id);i<0?p.push(id):p.splice(i,1);R()}
+function edRow(i){return `<div class="lib" style="--c:${T[i.type][2]}"><input type="text" id="en" value="${esc(i.name)}" style="flex:1;min-width:160px" onkeydown="if(event.key==='Enter')saveEd(${i.id});if(event.key==='Escape')edit(0)"><select id="et">${ORD.map(k=>`<option value="${k}" ${k===i.type?'selected':''}>${T[k][0]} ${T[k][1]}</option>`).join('')}</select><div><button class="sm p" onclick="saveEd(${i.id})">💾 Save</button> <button class="sm" onclick="edit(0)">Cancel</button></div></div>`}
+function edit(id){editId=id;rLib();if(id){const e=$('en');e.focus();e.select()}}
+function saveEd(id){const i=item(id),v=$('en').value.trim();if(!v)return;const old=i.name;i.name=v;i.type=$('et').value;S.wheel=[...new Set(S.wheel.map(w=>w===old?v:w))];editId=0;R();rWheel()}
 function allDays(id){const all=S.plan.every(p=>p.includes(id));S.plan.forEach((p,d)=>{const i=p.indexOf(id);if(all){if(i>=0)p.splice(i,1)}else if(i<0)p.push(id)});R()}
 function addTo(d,v){if(v){S.plan[d].push(+v);R()}}
 function retire(id,v){item(id).retired=v;delId=0;R()}
