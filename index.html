@@ -404,17 +404,19 @@ function csv(){
   if(S.hist&&S.hist.length){L.push('');row(['EARLIER WEEKS (totals only)']);row(['Week starting','Minutes practised','Times played','Days practised']);S.hist.forEach(h=>row([h.wk,(h.t/60).toFixed(1),h.p,h.td]))}
   return '\ufeff'+L.join('\r\n');
 }
+function showTxt(t,why){const b=$('bk');b.value=t;b.focus();b.select();
+  const ok=()=>xm((why||'')+'📋 Copied! Paste it into a note or email to keep it safe.'),no=()=>xm((why||'')+'The text is shown below — select it all and copy it.');
+  try{navigator.clipboard.writeText(t).then(ok,no)}catch(e){no()}}
 async function dl(name,text){
   try{const d=window.claude&&await claude.use("downloads");
-    if(!d){xm('Downloads are not available here — use “Show & copy backup text” instead.');return}
-    await d.save({filename:name,data:text});xm('✅ Saved '+name)}
-  catch(e){xm(e&&e.code==='declined'?'Download cancelled.':'The download didn’t work — use “Show & copy backup text” instead.')}
+    if(d){await d.save({filename:name,data:text});xm('✅ Saved '+name);return}}
+  catch(e){if(e&&e.code==='declined'){xm('Download cancelled.');return}}
+  showTxt(text,'File downloads aren’t available in this view, so here is the text instead (save it as '+name+'). ')
 }
 const day=()=>new Date().toISOString().slice(0,10);
 $('xj').onclick=()=>dl('music-practice-backup-'+day()+'.json',backup());
 $('xc').onclick=()=>dl('music-practice-'+day()+'.csv',csv());
-$('xt').onclick=()=>{const t=$('bk');t.value=backup();t.focus();t.select();
-  try{navigator.clipboard.writeText(t.value).then(()=>xm('📋 Copied! Paste it into a note or email to keep it safe.'),()=>xm('Backup text is shown — select it all and copy.'))}catch(e){xm('Backup text is shown — select it all and copy.')}};
+$('xt').onclick=()=>showTxt(backup());
 $('xf').onchange=function(){const f=this.files[0];if(!f)return;const rd=new FileReader();rd.onload=()=>{$('bk').value=rd.result;xm('Loaded “'+f.name+'”. Tap Restore to use it.')};rd.readAsText(f)};
 let arR=false,tR;
 $('xr').onclick=function(){
