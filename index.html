@@ -47,6 +47,7 @@ textarea{width:100%;min-height:70px;resize:vertical}
 .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));gap:14px}
 .grid .card{margin:0}
 .grid .card.td{border-color:var(--pri)}
+.dt{font-weight:normal;color:var(--mute);font-size:.9rem}
 .tag{background:var(--hi);border-radius:99px;padding:2px 10px;font-size:.8rem;margin-left:6px}
 .c2{--c:#888;display:inline-flex;align-items:center;gap:4px;margin:3px 3px 3px 0;padding:4px 6px 4px 10px;border-radius:99px;border:2px solid var(--c);background:color-mix(in srgb,var(--c) 14%,var(--card));font-size:.9rem}
 .c2 button{border:none;background:none;padding:0 4px;color:var(--mute)}
@@ -149,6 +150,9 @@ const save=()=>{try{localStorage.setItem('practice2',JSON.stringify(S))}catch(e)
 const dur=s=>{s=Math.round(s);if(s<60)return s+' sec';const h=Math.floor(s/3600),m=Math.floor(s%3600/60),x=s%60;return (h?h+' hr ':'')+(m||h?m+' min':'')+(!h&&x?' '+x+' sec':'')};
 function weekStart(){const d=new Date();d.setDate(d.getDate()-d.getDay());return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
 const wkLabel=w=>new Date(w+'T00:00:00').toLocaleDateString(undefined,{day:'numeric',month:'short'});
+const ymd=x=>x.getFullYear()+'-'+String(x.getMonth()+1).padStart(2,'0')+'-'+String(x.getDate()).padStart(2,'0');
+function dateOf(d){const x=new Date(S.wk+'T00:00:00');x.setDate(x.getDate()+d);return x}
+const dLbl=d=>dateOf(d).toLocaleDateString(undefined,{day:'numeric',month:'short'});
 const wkT=()=>S.time.reduce((a,b)=>a+b,0);
 const item=id=>S.items.find(i=>i.id===id);
 const dayItems=d=>S.plan[d].map(item).filter(i=>i&&!i.retired);
@@ -156,9 +160,9 @@ const cnt=(d,id)=>S.cnt[d+'-'+id]||0;
 
 function rNow(){
   const d=sel,its=dayItems(d),done=its.filter(i=>cnt(d,i.id)>0).length;
-  $('nowT').textContent=d==today?"⭐ It's "+DN[d]+"! Today's practice":"📝 "+DN[d]+"'s practice";
+  $('nowT').textContent=d==today?"⭐ It's "+DN[d]+", "+dLbl(d)+"! Today's practice":"📝 "+DN[d]+", "+dLbl(d)+" — practice";
   let h='<div class="chips">'+
-   DN.map((n,i)=>`<button class="chip ${i==sel?'on':''} ${i==today?'td':''}" onclick="setSel(${i})">${n.slice(0,3)}${i==today?' •':''}</button>`).join('')+'</div>';
+   DN.map((n,i)=>`<button class="chip ${i==sel?'on':''} ${i==today?'td':''}" onclick="setSel(${i})">${n.slice(0,3)}${i==today?' •':''}<small style="display:block;font-weight:normal">${dLbl(i)}</small></button>`).join('')+'</div>';
   if(!its.length)h+=`<div class="empty">Nothing planned for ${DN[d]} yet. Add music from the library or the week plan below! 🎶</div>`;
   its.forEach(i=>{const n=cnt(d,i.id),t=T[i.type];
     h+=`<div class="it ${n?'done':''}" style="--c:${t[2]}"><div class="nm">${n?'✅':t[0]} ${esc(i.name)}<small>${t[1]}</small></div><div class="cn"><button onclick="adj(${d},${i.id},-1)">−</button><b>${n}</b><button class="p" onclick="adj(${d},${i.id},1)">+</button></div></div>`});
@@ -181,7 +185,7 @@ function rLib(){
 function rWeek(){
   $('week').innerHTML=DN.map((n,d)=>{
     const its=dayItems(d),free=S.items.filter(i=>!i.retired&&!S.plan[d].includes(i.id));
-    return `<details class="card ${d==today?'td':''}" data-k="day${d}" ${S.ui['day'+d]===false?'':'open'}><summary>${n}${d==today?'<span class="tag">today</span>':''}</summary>`+
+    return `<details class="card ${d==today?'td':''}" data-k="day${d}" ${S.ui['day'+d]===false?'':'open'}><summary>${n}<span class="dt">${dLbl(d)}</span>${d==today?'<span class="tag">today</span>':''}</summary>`+
      (its.length?its.map(i=>{const k=cnt(d,i.id);return `<span class="c2" style="--c:${T[i.type][2]}">${T[i.type][0]} ${esc(i.name)}${k?' ×'+k:''}<button title="Remove from ${n}" onclick="tog(${i.id},${d})">✕</button></span>`}).join(''):'<div class="meta">Nothing planned yet</div>')+
      (free.length?`<div class="row" style="justify-content:flex-start"><select onchange="addTo(${d},this.value)"><option value="">➕ Add to ${n}…</option>${free.map(i=>`<option value="${i.id}">${T[i.type][0]} ${esc(i.name)}</option>`).join('')}</select></div>`:'')+
      `<div class="meta">⏱ ${dur(S.time[d])}</div><textarea data-d="${d}" oninput="note(this)" placeholder="📓 Notes for ${n}…">${esc(S.notes[d])}</textarea><div class="row" style="justify-content:flex-start"><button class="sm p" onclick="go(${d})">👉 Practice this day</button></div></details>`}).join('');
@@ -194,7 +198,7 @@ function rSum(){
   let h=(weekStart()>S.wk?'<div class="msg">🆕 A new week has started! Tap “Start a new week” in My Week to save last week into your totals.</div>':'')+
    `<div class="meta">Week starting Sunday ${wkLabel(S.wk)}</div><div class="stats">`+
    tile(dur(tt),'⏱ Time this week')+tile(dp+' / 7','📆 Days practised')+tile(dp?dur(tt/dp):'–','📈 Average per day practised')+tile(mx?DN[bi]+' · '+dur(mx):'–','🏅 Best day')+tile(p,'🎯 Times played')+tile(sch?tk+' of '+sch:'–','✅ Tasks started')+'</div>'+
-   '<div class="bars">'+S.time.map((s,d)=>`<div class="bc"><small>${s?Math.round(s/60)+'m':''}</small><div class="bb ${d==today?'tdb':''}" style="height:${s?Math.max(4,s/mx*90):0}px"></div><span>${DN[d].slice(0,3)}</span></div>`).join('')+'</div>'+
+   '<div class="bars">'+S.time.map((s,d)=>`<div class="bc"><small>${s?Math.round(s/60)+'m':''}</small><div class="bb ${d==today?'tdb':''}" style="height:${s?Math.max(4,s/mx*90):0}px"></div><span>${DN[d].slice(0,3)}<br>${dateOf(d).getDate()}</span></div>`).join('')+'</div>'+
    (p?'<div class="meta">Played this week: '+ORD.filter(k=>bt[k]).map(k=>T[k][0]+' '+T[k][1]+' ×'+bt[k]).join(' · ')+'</div>':'')+
    '<h3>🏆 Totals</h3><div class="stats">'+tile(dur(all),'⌛ All-time practice')+tile(wks,'🗓 Weeks tracked')+tile(dur(all/wks),'📊 Average per week')+'</div>';
   if(S.hist.length)h+='<h3>📜 Past weeks</h3>'+S.hist.slice(-8).reverse().map(w=>`<div class="hw"><span>Week of ${wkLabel(w.wk)}</span><span>${dur(w.t)} · ${w.p} plays · ${w.td} days</span></div>`).join('');
@@ -297,10 +301,10 @@ function csv(){
   const q=v=>'"'+String(v).replace(/"/g,'""')+'"',L=[],row=a=>L.push(a.map(q).join(','));
   row(['MUSIC LIBRARY']);row(['Name','Type','Status','Days scheduled']);
   S.items.forEach(i=>row([i.name,T[i.type][1],i.retired?'Retired':'Active',DN.filter((n,d)=>S.plan[d].includes(i.id)).join(' ')]));
-  L.push('');row(['THIS WEEK (starting '+S.wk+')']);row(['Day','Minutes practised','Notes']);
-  DN.forEach((n,d)=>row([n,(S.time[d]/60).toFixed(1),S.notes[d]]));
-  L.push('');row(['THIS WEEK PLAYS']);row(['Day','Piece / task','Type','Times played']);
-  DN.forEach((n,d)=>S.plan[d].map(item).filter(Boolean).forEach(i=>row([n,i.name,T[i.type][1],cnt(d,i.id)])));
+  L.push('');row(['THIS WEEK (starting '+S.wk+')']);row(['Day','Date','Minutes practised','Notes']);
+  DN.forEach((n,d)=>row([n,ymd(dateOf(d)),(S.time[d]/60).toFixed(1),S.notes[d]]));
+  L.push('');row(['THIS WEEK PLAYS']);row(['Day','Date','Piece / task','Type','Times played']);
+  DN.forEach((n,d)=>S.plan[d].map(item).filter(Boolean).forEach(i=>row([n,ymd(dateOf(d)),i.name,T[i.type][1],cnt(d,i.id)])));
   L.push('');row(['PAST WEEKS']);row(['Week starting','Minutes practised','Times played','Days practised']);
   S.hist.forEach(h=>row([h.wk,(h.t/60).toFixed(1),h.p,h.td]));
   return '\ufeff'+L.join('\r\n');
