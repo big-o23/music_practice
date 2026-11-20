@@ -2,11 +2,14 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>My Music Practice</title>
 <style>
 :root{--bg:#fff7e6;--card:#fff;--ink:#2b2350;--mute:#6f6a8f;--line:#f0e3c4;--pri:#7c4dff;--pri-ink:#fff;--hi:#ffe9a8;--ok:#27ae60}
-@media (prefers-color-scheme:dark){:root{--bg:#1a1630;--card:#2a2447;--ink:#f4f1ff;--mute:#b4aed8;--line:#3d3568;--pri:#a58bff;--pri-ink:#1a1230;--hi:#4a3f86;--ok:#4cd98a}}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#1a1630;--card:#2a2447;--ink:#f4f1ff;--mute:#b4aed8;--line:#3d3568;--pri:#a58bff;--pri-ink:#1a1230;--hi:#4a3f86;--ok:#4cd98a}}
+:root[data-theme="dark"]{--bg:#1a1630;--card:#2a2447;--ink:#f4f1ff;--mute:#b4aed8;--line:#3d3568;--pri:#a58bff;--pri-ink:#1a1230;--hi:#4a3f86;--ok:#4cd98a}
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--ink);font-family:"Trebuchet MS","Comic Sans MS",system-ui,sans-serif;padding:14px;font-size:16px}
 main{max-width:1000px;margin:0 auto}
@@ -203,7 +206,7 @@ function rNow(){
   its.forEach(i=>{const n=cnt(d,i.id),t=T[i.type];
     h+=`<div class="it ${n?'done':''}" style="--c:${t[2]}"><div class="nm">${n?'✅':t[0]} ${esc(i.name)}<small>${t[1]}</small></div><div class="cn"><button onclick="adj(${d},${i.id},-1)">−</button><b>${n}</b><button class="p" onclick="adj(${d},${i.id},1)">+</button></div></div>`});
   if(its.length){h+=`<div class="bar"><i style="width:${done/its.length*100}%"></i></div><div class="msg">${done==its.length?'🌟 Amazing! You finished everything! 🎉':done+' of '+its.length+' started — keep going! 💪'}</div>`}
-  h+=`<div class="meta">⏱ Practice time for ${DN[d]}: <b>${dur(getW().time[d])}</b> · This week: <b>${dur(wkT())}</b> <button class="sm" onclick="adjT(${d},300)">+5 min</button> <button class="sm" onclick="adjT(${d},-300)">−5 min</button></div>
+  h+=`<div class="meta">⏱ Practice time for ${DN[d]}: <b>${dur(getW().time[d])}</b> · This week: <b>${dur(wkT())}</b> <button class="sm" onclick="adjT(${d},-300)">−5 min</button> <button class="sm" onclick="adjT(${d},-60)">−1 min</button> <button class="sm" onclick="adjT(${d},60)">+1 min</button> <button class="sm" onclick="adjT(${d},300)">+5 min</button></div>
    <textarea data-d="${d}" oninput="note(this)" placeholder="📓 Notes for ${DN[d]}: what went well? what to work on?">${esc(getW().notes[d])}</textarea>`;
   $('now').innerHTML=h;
 }
@@ -377,14 +380,15 @@ function csv(){
   if(S.hist&&S.hist.length){L.push('');row(['EARLIER WEEKS (totals only)']);row(['Week starting','Minutes practised','Times played','Days practised']);S.hist.forEach(h=>row([h.wk,(h.t/60).toFixed(1),h.p,h.td]))}
   return '\ufeff'+L.join('\r\n');
 }
-function dl(name,text,type){
-  try{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([text],{type}));a.download=name;document.body.appendChild(a);a.click();a.remove();
-    xm('⬇ Download started. If nothing downloaded, use “Show & copy backup text” instead.')}
-  catch(e){xm('Downloads are blocked here — use “Show & copy backup text” instead.')}
+async function dl(name,text){
+  try{const d=window.claude&&await claude.use("downloads");
+    if(!d){xm('Downloads are not available here — use “Show & copy backup text” instead.');return}
+    await d.save({filename:name,data:text});xm('✅ Saved '+name)}
+  catch(e){xm(e&&e.code==='declined'?'Download cancelled.':'The download didn’t work — use “Show & copy backup text” instead.')}
 }
 const day=()=>new Date().toISOString().slice(0,10);
-$('xj').onclick=()=>dl('music-practice-backup-'+day()+'.json',backup(),'application/json');
-$('xc').onclick=()=>dl('music-practice-'+day()+'.csv',csv(),'text/csv');
+$('xj').onclick=()=>dl('music-practice-backup-'+day()+'.json',backup());
+$('xc').onclick=()=>dl('music-practice-'+day()+'.csv',csv());
 $('xt').onclick=()=>{const t=$('bk');t.value=backup();t.focus();t.select();
   try{navigator.clipboard.writeText(t.value).then(()=>xm('📋 Copied! Paste it into a note or email to keep it safe.'),()=>xm('Backup text is shown — select it all and copy.'))}catch(e){xm('Backup text is shown — select it all and copy.')}};
 $('xf').onchange=function(){const f=this.files[0];if(!f)return;const rd=new FileReader();rd.onload=()=>{$('bk').value=rd.result;xm('Loaded “'+f.name+'”. Tap Restore to use it.')};rd.readAsText(f)};
