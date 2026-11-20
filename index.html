@@ -411,7 +411,9 @@ async function dl(name,text){
   try{const d=window.claude&&await claude.use("downloads");
     if(d){await d.save({filename:name,data:text});xm('✅ Saved '+name);return}}
   catch(e){if(e&&e.code==='declined'){xm('Download cancelled.');return}}
-  showTxt(text,'File downloads aren’t available in this view, so here is the text instead (save it as '+name+'). ')
+  if(window.claude){showTxt(text,'File downloads aren’t available in this view, so here is the text instead (save it as '+name+'). ');return}
+  try{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([text],{type:'application/octet-stream'}));a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),4000);xm('⬇ Download started. If nothing downloaded, use “Show & copy backup text”.')}
+  catch(e){showTxt(text,'The download didn’t work, so here is the text instead. ')}
 }
 const day=()=>new Date().toISOString().slice(0,10);
 $('xj').onclick=()=>dl('music-practice-backup-'+day()+'.json',backup());
