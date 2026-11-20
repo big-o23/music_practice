@@ -98,11 +98,35 @@ h3{margin:16px 0 8px;font-size:1.05rem}
 .bb.tdb{background:var(--ok)}
 .hw{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;padding:6px 10px;border-radius:10px;background:var(--bg);margin:4px 0;font-size:.9rem}
 .foot{text-align:center;margin:16px 0 4px}
+.look{display:flex;justify-content:flex-end;margin-bottom:6px}
+.look button{padding:3px 12px;font-size:.8rem;border-radius:0}
+.look button:first-child{border-radius:999px 0 0 999px}
+.look button:last-child{border-radius:0 999px 999px 0;border-left:none}
+.look button.on{background:var(--pri);color:var(--pri-ink);border-color:var(--pri)}
+:root[data-style="teen"]{--bg:#eef1f5;--card:#fff;--ink:#1c2330;--mute:#627084;--line:#d6dce6;--pri:#0e7c86;--pri-ink:#fff;--hi:#d8f0f2;--ok:#1f9d63}
+@media (prefers-color-scheme:dark){:root[data-style="teen"]:not([data-theme="light"]){--bg:#0f141b;--card:#182029;--ink:#e6ebf2;--mute:#8d9bb0;--line:#2a3544;--pri:#35c2cf;--pri-ink:#06222a;--hi:#1c3a40;--ok:#3ed598}}
+:root[data-style="teen"][data-theme="dark"]{--bg:#0f141b;--card:#182029;--ink:#e6ebf2;--mute:#8d9bb0;--line:#2a3544;--pri:#35c2cf;--pri-ink:#06222a;--hi:#1c3a40;--ok:#3ed598}
+:root[data-style="teen"] body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;font-size:15px}
+:root[data-style="teen"] h1{text-align:left;font-size:1.4rem;font-weight:600}
+:root[data-style="teen"] .card{border-width:1px;border-radius:12px}
+:root[data-style="teen"] #sw{background:var(--card)}
+:root[data-style="teen"] button{border-width:1px;border-radius:8px;font-weight:600}
+:root[data-style="teen"] .look button{border-radius:0}
+:root[data-style="teen"] .look button:first-child{border-radius:8px 0 0 8px}
+:root[data-style="teen"] .look button:last-child{border-radius:0 8px 8px 0}
+:root[data-style="teen"] .dy{border-radius:8px}
+:root[data-style="teen"] select,:root[data-style="teen"] input[type=text],:root[data-style="teen"] textarea{border-width:1px;border-radius:8px}
+:root[data-style="teen"] .it,:root[data-style="teen"] .lib{border-width:1px;border-radius:10px}
+:root[data-style="teen"] .c2{border-width:1px;border-radius:8px}
+:root[data-style="teen"] .st{border-width:1px;border-radius:10px}
+:root[data-style="teen"] .bar{height:10px;border-radius:5px}
+:root[data-style="teen"] .nm{font-weight:600}
 </style>
 </head>
 <body>
 <main>
-<h1>🎶 My Music Practice 🎶</h1>
+<div class="look"><button id="lk" class="on">🎨 Theme 1</button><button id="lt">🎧 Theme 2</button></div>
+<h1 id="ttl">🎶 My Music Practice 🎶</h1>
 
 <details class="card" id="sw" data-k="sw" open><summary>⏱ Stopwatch <span id="swS" class="meta"></span></summary>
   <div id="time">00:00:00</div>
@@ -114,7 +138,7 @@ h3{margin:16px 0 8px;font-size:1.05rem}
   <div class="row">Add my time to: <select id="swd"></select><span id="swm" class="meta"></span></div>
 </details>
 
-<details class="card" data-k="met" open><summary>🥁 Metronome <span id="metS" class="meta"></span></summary>
+<details class="card" data-k="met"><summary>🥁 Metronome <span id="metS" class="meta"></span></summary>
   <div style="text-align:center">
     <div class="bpmrow"><button id="mm">−</button><div><span id="bpm">100</span><small> BPM</small><div id="tn" class="meta"></div></div><button id="mp">+</button></div>
     <input type="range" id="msl" min="30" max="240">
@@ -126,14 +150,14 @@ h3{margin:16px 0 8px;font-size:1.05rem}
 
 <details class="card" data-k="now" open><summary id="nowT"></summary><div id="now"></div></details>
 
-<details class="card" data-k="sum" open><summary>📊 Weekly Summary</summary><div id="sum"></div></details>
+<details class="card" data-k="cal"><summary>🗓 Calendar</summary><div id="cal"></div></details>
 
-<details class="card" data-k="cal" open><summary>🗓 Calendar</summary><div id="cal"></div></details>
+<details class="card" data-k="sum"><summary>📊 Weekly Summary</summary><div id="sum"></div></details>
 
-<details class="card" data-k="week" open><summary>📅 My Week</summary><div id="wkbar1"></div><div class="grid" id="week"></div>
+<details class="card" data-k="week"><summary>📅 My Week</summary><div id="wkbar1"></div><div class="grid" id="week"></div>
 </details>
 
-<details class="card" data-k="lib" open><summary>📚 My Music Library</summary>
+<details class="card" data-k="lib"><summary>📚 My Music Library</summary>
   <div class="add">
     <input type="text" id="n" placeholder="Name of piece, theory page, scale…" autocomplete="off">
     <select id="ty"></select>
@@ -142,7 +166,7 @@ h3{margin:16px 0 8px;font-size:1.05rem}
   <p class="meta">Tap the day letters (S M T W T F S) to choose which days to practice each one.</p>
   <div id="lib"></div>
 </details>
-<details class="card" id="wheelc" data-k="wheel" open><summary>🎡 Spin the Wheel!</summary>
+<details class="card" id="wheelc" data-k="wheel"><summary>🎡 Spin the Wheel!</summary>
   <div class="wh">
     <div class="wc"><div class="ptr">▼</div><canvas id="wc" width="640" height="640"></canvas></div>
     <div class="wp">
@@ -172,7 +196,7 @@ h3{margin:16px 0 8px;font-size:1.05rem}
 const DN=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
 const T={piece:['🎵','Piece','#8e5bd6'],theory:['📖','Theory','#2d8fe0'],scale:['🎹','Scale','#f08a24'],arpeggio:['🌈','Arpeggio','#e0488f'],exercise:['💪','Exercise','#26a96c']};
 const ORD=Object.keys(T),today=new Date().getDay();
-let S={items:[],plan:[[],[],[],[],[],[],[]],next:1,wheel:[],hist:[],ui:{},weeks:{},met:{bpm:100,beats:4,vol:60}};
+let S={items:[],plan:[[],[],[],[],[],[],[]],next:1,wheel:[],hist:[],ui:{},weeks:{},met:{bpm:100,beats:4,vol:60},look:'kids'};
 function blankWk(){return{time:[0,0,0,0,0,0,0],cnt:{},notes:['','','','','','','']}}
 function mig(o){if(!o.weeks)o.weeks={};if(o.wk&&o.time&&!o.weeks[o.wk])o.weeks[o.wk]={time:o.time,cnt:o.cnt||{},notes:o.notes||['','','','','','','']};delete o.wk;delete o.time;delete o.cnt;delete o.notes;if(!o.met)o.met={bpm:100,beats:4,vol:60};return o}
 try{const x=JSON.parse(localStorage.getItem('practice2')||'null');if(x)S=Object.assign(S,x)}catch(e){}
@@ -402,7 +426,12 @@ $('xr').onclick=function(){
 };
 
 document.addEventListener('toggle',e=>{const k=e.target.dataset&&e.target.dataset.k;if(k){S.ui[k]=e.target.open;save()}},true);
+if(S.uiv!==2){S.ui={};S.uiv=2;save()}
 document.querySelectorAll('details[data-k]').forEach(d=>{const u=S.ui[d.dataset.k];if(u!==undefined)d.open=u});
+function applyLook(){const t=S.look==='teen';document.documentElement.dataset.style=t?'teen':'kids';$('ttl').textContent=t?'Music Practice':'🎶 My Music Practice 🎶';$('lk').classList.toggle('on',!t);$('lt').classList.toggle('on',t)}
+$('lk').onclick=()=>{S.look='kids';save();applyLook()};
+$('lt').onclick=()=>{S.look='teen';save();applyLook()};
+applyLook();
 R();rWheel();
 </script>
 </body>
