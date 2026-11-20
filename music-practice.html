@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>My Music Practice</title>
+<style>
+:root{--bg:#fff7e6;--card:#fff;--ink:#2b2350;--mute:#6f6a8f;--line:#f0e3c4;--pri:#7c4dff;--pri-ink:#fff;--hi:#ffe9a8;--ok:#27ae60}
+@media (prefers-color-scheme:dark){:root{--bg:#1a1630;--card:#2a2447;--ink:#f4f1ff;--mute:#b4aed8;--line:#3d3568;--pri:#a58bff;--pri-ink:#1a1230;--hi:#4a3f86;--ok:#4cd98a}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Trebuchet MS","Comic Sans MS",system-ui,sans-serif;padding:14px;font-size:16px}
+main{max-width:1000px;margin:0 auto}
+h1{text-align:center;margin:4px 0 12px;font-size:1.7rem}
+h2{margin:0 0 10px;font-size:1.25rem}
+.card{background:var(--card);border:3px solid var(--line);border-radius:20px;padding:16px;margin-bottom:16px}
+button,select,input,textarea{font:inherit;color:var(--ink)}
+button{cursor:pointer;border:2px solid var(--line);background:var(--card);border-radius:999px;padding:8px 16px;font-weight:bold}
+button:hover{filter:brightness(.96)}
+button.p{background:var(--pri);border-color:var(--pri);color:var(--pri-ink)}
+select,input[type=text],textarea{border:2px solid var(--line);border-radius:12px;padding:9px 12px;background:var(--bg)}
+textarea{width:100%;min-height:70px;resize:vertical}
+#sw{text-align:center;background:linear-gradient(135deg,#ffd86b22,#ff8fb322)}
+#time{font-family:"Courier New",monospace;font-size:3.4rem;font-weight:bold;letter-spacing:2px}
+.row{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;align-items:center;margin-top:8px}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+.chip{padding:8px 12px}
+.chip.on{background:var(--pri);border-color:var(--pri);color:var(--pri-ink)}
+.chip.td{box-shadow:0 0 0 3px var(--hi)}
+.it,.lib{--c:#888;display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:space-between;padding:10px 12px;margin:8px 0;border-radius:16px;border:2px solid var(--c);background:color-mix(in srgb,var(--c) 14%,var(--card))}
+.it.done{opacity:.8}
+.nm{font-weight:bold;font-size:1.1rem}
+.nm small{display:block;font-weight:normal;font-size:.75rem;color:var(--mute)}
+.cn{display:flex;align-items:center;gap:8px}
+.cn button{width:42px;height:42px;padding:0;font-size:1.4rem;line-height:1}
+.cn b{min-width:30px;text-align:center;font-size:1.3rem}
+.bar{height:16px;border-radius:99px;background:var(--line);overflow:hidden;margin:8px 0}
+.bar i{display:block;height:100%;background:var(--ok);transition:width .3s}
+.msg{text-align:center;font-weight:bold;margin:6px 0}
+.empty{color:var(--mute);text-align:center;padding:14px}
+.add{display:flex;gap:8px;flex-wrap:wrap}
+.add input{flex:1;min-width:180px}
+.days{display:flex;gap:4px}
+.dy{width:34px;height:34px;padding:0;border-radius:50%}
+.dy.all{width:auto;border-radius:99px;padding:0 12px;margin-left:4px}
+.dy.on{background:var(--pri);border-color:var(--pri);color:var(--pri-ink)}
+.sm{padding:5px 12px;font-size:.85rem}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));gap:14px}
+.grid .card{margin:0}
+.grid .card.td{border-color:var(--pri)}
+.tag{background:var(--hi);border-radius:99px;padding:2px 10px;font-size:.8rem;margin-left:6px}
+.c2{--c:#888;display:inline-flex;align-items:center;gap:4px;margin:3px 3px 3px 0;padding:4px 6px 4px 10px;border-radius:99px;border:2px solid var(--c);background:color-mix(in srgb,var(--c) 14%,var(--card));font-size:.9rem}
+.c2 button{border:none;background:none;padding:0 4px;color:var(--mute)}
+.meta{color:var(--mute);font-size:.9rem;margin:6px 0}
+.wh{display:flex;gap:16px;flex-wrap:wrap;align-items:center;justify-content:center}
+.wc{position:relative;width:min(100%,320px)}
+canvas{width:100%;height:auto;display:block}
+.ptr{position:absolute;top:-8px;left:50%;transform:translateX(-50%);font-size:2rem;color:var(--pri);z-index:1;line-height:1}
+.wp{flex:1;min-width:240px}
+.res{font-size:1.5rem;font-weight:bold;text-align:center;margin-top:10px;min-height:2em}
+.big{font-size:1.3rem;padding:12px 28px;margin-top:10px}
+details>summary{cursor:pointer;font-size:1.25rem;font-weight:bold;list-style:none;display:flex;align-items:center;gap:8px}
+details>summary::-webkit-details-marker{display:none}
+details>summary::after{content:'▾';margin-left:auto;color:var(--mute)}
+details:not([open])>summary::after{content:'▸'}
+details[open]>summary{margin-bottom:12px}
+#sw>summary{justify-content:center}
+#sw>summary::after{margin-left:0}
+.grid .card{background:var(--bg)}
+h3{margin:16px 0 8px;font-size:1.05rem}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px}
+.st{background:var(--bg);border:2px solid var(--line);border-radius:14px;padding:10px;text-align:center}
+.st b{display:block;font-size:1.25rem}
+.st small{color:var(--mute);display:block;margin-bottom:2px}
+.bars{display:flex;gap:6px;align-items:flex-end;height:140px;margin:14px 0 4px}
+.bc{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;font-size:.8rem}
+.bb{width:100%;max-width:44px;background:var(--pri);border-radius:8px 8px 0 0;margin:2px 0}
+.bb.tdb{background:var(--ok)}
+.hw{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;padding:6px 10px;border-radius:10px;background:var(--bg);margin:4px 0;font-size:.9rem}
+.foot{text-align:center;margin:16px 0 4px}
+</style>
+</head>
+<body>
+<main>
+<h1>🎶 My Music Practice 🎶</h1>
+
+<details class="card" id="sw" data-k="sw" open><summary>⏱ Stopwatch <span id="swS" class="meta"></span></summary>
+  <div id="time">00:00:00</div>
+  <div class="row">
+    <button class="p" id="go">▶ Start</button>
+    <button id="sv">💾 Save time</button>
+    <button id="rs">↺ Reset</button>
+  </div>
+  <div class="row">Add my time to: <select id="swd"></select><span id="swm" class="meta"></span></div>
+</details>
+
+<details class="card" data-k="now" open><summary id="nowT"></summary><div id="now"></div></details>
+
+<details class="card" data-k="sum" open><summary>📊 Weekly Summary</summary><div id="sum"></div></details>
+
+<details class="card" data-k="week" open><summary>📅 My Week</summary><div class="grid" id="week"></div>
+<div class="foot"><button id="nw">🔄 Start a new week</button></div>
+</details>
+
+<details class="card" data-k="lib" open><summary>📚 My Music Library</summary>
+  <div class="add">
+    <input type="text" id="n" placeholder="Name of piece, theory page, scale…" autocomplete="off">
+    <select id="ty"></select>
+    <button class="p" id="add">➕ Add</button>
+  </div>
+  <p class="meta">Tap the day letters (S M T W T F S) to choose which days to practice each one.</p>
+  <div id="lib"></div>
+</details>
+<details class="card" id="wheelc" data-k="wheel" open><summary>🎡 Spin the Wheel!</summary>
+  <div class="wh">
+    <div class="wc"><div class="ptr">▼</div><canvas id="wc" width="640" height="640"></canvas></div>
+    <div class="wp">
+      <div class="add"><input type="text" id="wi" placeholder="Add something to the wheel (e.g. D major scale)" autocomplete="off"><button class="p" id="wa">➕ Add</button></div>
+      <div class="add" style="margin-top:8px"><select id="wt"></select><button class="sm" id="wl">Add all of these from my library</button></div>
+      <div id="wl2" style="margin-top:10px"></div>
+      <div style="text-align:center"><button class="p big" id="spin">🎡 SPIN!</button></div>
+      <div class="res" id="wr"></div>
+    </div>
+  </div>
+</details>
+</main>
+<script>
+const DN=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+const T={piece:['🎵','Piece','#8e5bd6'],theory:['📖','Theory','#2d8fe0'],scale:['🎹','Scale','#f08a24'],arpeggio:['🌈','Arpeggio','#e0488f'],exercise:['💪','Exercise','#26a96c']};
+const ORD=Object.keys(T),today=new Date().getDay();
+let S={items:[],plan:[[],[],[],[],[],[],[]],cnt:{},notes:['','','','','','',''],time:[0,0,0,0,0,0,0],next:1,wheel:[],wk:weekStart(),hist:[],ui:{}};
+try{const x=JSON.parse(localStorage.getItem('practice2')||'null');if(x)S=Object.assign(S,x)}catch(e){}
+let sel=today,delId=0;
+const $=id=>document.getElementById(id);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const save=()=>{try{localStorage.setItem('practice2',JSON.stringify(S))}catch(e){}};
+const dur=s=>{s=Math.round(s);if(s<60)return s+' sec';const h=Math.floor(s/3600),m=Math.floor(s%3600/60),x=s%60;return (h?h+' hr ':'')+(m||h?m+' min':'')+(!h&&x?' '+x+' sec':'')};
+function weekStart(){const d=new Date();d.setDate(d.getDate()-d.getDay());return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
+const wkLabel=w=>new Date(w+'T00:00:00').toLocaleDateString(undefined,{day:'numeric',month:'short'});
+const wkT=()=>S.time.reduce((a,b)=>a+b,0);
+const item=id=>S.items.find(i=>i.id===id);
+const dayItems=d=>S.plan[d].map(item).filter(i=>i&&!i.retired);
+const cnt=(d,id)=>S.cnt[d+'-'+id]||0;
+
+function rNow(){
+  const d=sel,its=dayItems(d),done=its.filter(i=>cnt(d,i.id)>0).length;
+  $('nowT').textContent=d==today?"⭐ It's "+DN[d]+"! Today's practice":"📝 "+DN[d]+"'s practice";
+  let h='<div class="chips">'+
+   DN.map((n,i)=>`<button class="chip ${i==sel?'on':''} ${i==today?'td':''}" onclick="setSel(${i})">${n.slice(0,3)}${i==today?' •':''}</button>`).join('')+'</div>';
+  if(!its.length)h+=`<div class="empty">Nothing planned for ${DN[d]} yet. Add music from the library or the week plan below! 🎶</div>`;
+  its.forEach(i=>{const n=cnt(d,i.id),t=T[i.type];
+    h+=`<div class="it ${n?'done':''}" style="--c:${t[2]}"><div class="nm">${n?'✅':t[0]} ${esc(i.name)}<small>${t[1]}</small></div><div class="cn"><button onclick="adj(${d},${i.id},-1)">−</button><b>${n}</b><button class="p" onclick="adj(${d},${i.id},1)">+</button></div></div>`});
+  if(its.length){h+=`<div class="bar"><i style="width:${done/its.length*100}%"></i></div><div class="msg">${done==its.length?'🌟 Amazing! You finished everything! 🎉':done+' of '+its.length+' started — keep going! 💪'}</div>`}
+  h+=`<div class="meta">⏱ Practice time for ${DN[d]}: <b>${dur(S.time[d])}</b> · This week: <b>${dur(wkT())}</b> <button class="sm" onclick="adjT(${d},300)">+5 min</button> <button class="sm" onclick="adjT(${d},-300)">−5 min</button></div>
+   <textarea data-d="${d}" oninput="note(this)" placeholder="📓 Notes for ${DN[d]}: what went well? what to work on?">${esc(S.notes[d])}</textarea>`;
+  $('now').innerHTML=h;
+}
+function rLib(){
+  const act=S.items.filter(i=>!i.retired).sort((a,b)=>ORD.indexOf(a.type)-ORD.indexOf(b.type)),ret=S.items.filter(i=>i.retired);
+  let h=act.length?'':'<div class="empty">Add your first piece, scale or theory task above! 🎶</div>';
+  act.forEach(i=>{const t=T[i.type];
+    h+=`<div class="lib" style="--c:${t[2]}"><div class="nm">${t[0]} ${esc(i.name)}<small>${t[1]}</small></div><div class="days">`+
+     DN.map((n,d)=>`<button class="dy ${S.plan[d].includes(i.id)?'on':''}" title="${n}" onclick="tog(${i.id},${d})">${n[0]}</button>`).join('')+
+     `<button class="dy all ${S.plan.every(p=>p.includes(i.id))?'on':''}" title="Every day" onclick="allDays(${i.id})">All</button></div><button class="sm" onclick="retire(${i.id},true)">🏆 Retire</button></div>`});
+  if(ret.length){h+='<h2 style="margin-top:18px">🏆 Retired music</h2><p class="meta">Finished with these — they are hidden from your days.</p>';
+    ret.forEach(i=>{h+=`<div class="lib" style="--c:#999"><div class="nm">${T[i.type][0]} ${esc(i.name)}<small>${T[i.type][1]}</small></div><div><button class="sm" onclick="retire(${i.id},false)">↩ Bring back</button> <button class="sm" onclick="del(${i.id})">${delId==i.id?'Sure? Tap again':'🗑 Delete'}</button></div></div>`})}
+  $('lib').innerHTML=h;
+}
+function rWeek(){
+  $('week').innerHTML=DN.map((n,d)=>{
+    const its=dayItems(d),free=S.items.filter(i=>!i.retired&&!S.plan[d].includes(i.id));
+    return `<details class="card ${d==today?'td':''}" data-k="day${d}" ${S.ui['day'+d]===false?'':'open'}><summary>${n}${d==today?'<span class="tag">today</span>':''}</summary>`+
+     (its.length?its.map(i=>{const k=cnt(d,i.id);return `<span class="c2" style="--c:${T[i.type][2]}">${T[i.type][0]} ${esc(i.name)}${k?' ×'+k:''}<button title="Remove from ${n}" onclick="tog(${i.id},${d})">✕</button></span>`}).join(''):'<div class="meta">Nothing planned yet</div>')+
+     (free.length?`<div class="row" style="justify-content:flex-start"><select onchange="addTo(${d},this.value)"><option value="">➕ Add to ${n}…</option>${free.map(i=>`<option value="${i.id}">${T[i.type][0]} ${esc(i.name)}</option>`).join('')}</select></div>`:'')+
+     `<div class="meta">⏱ ${dur(S.time[d])}</div><textarea data-d="${d}" oninput="note(this)" placeholder="📓 Notes for ${n}…">${esc(S.notes[d])}</textarea><div class="row" style="justify-content:flex-start"><button class="sm p" onclick="go(${d})">👉 Practice this day</button></div></details>`}).join('');
+}
+function wkPlays(){let p=0;const bt={};S.items.forEach(i=>{for(let d=0;d<7;d++){const n=cnt(d,i.id);p+=n;bt[i.type]=(bt[i.type]||0)+n}});return{p,bt}}
+function rSum(){
+  const tt=wkT(),dp=S.time.filter(x=>x>0).length,mx=Math.max(...S.time),bi=S.time.indexOf(mx),{p,bt}=wkPlays();
+  let sch=0,tk=0;for(let d=0;d<7;d++)dayItems(d).forEach(i=>{sch++;if(cnt(d,i.id)>0)tk++});
+  const all=S.hist.reduce((a,h)=>a+h.t,0)+tt,wks=S.hist.length+1,tile=(b,l)=>`<div class="st"><small>${l}</small><b>${b}</b></div>`;
+  let h=(weekStart()>S.wk?'<div class="msg">🆕 A new week has started! Tap “Start a new week” in My Week to save last week into your totals.</div>':'')+
+   `<div class="meta">Week starting Sunday ${wkLabel(S.wk)}</div><div class="stats">`+
+   tile(dur(tt),'⏱ Time this week')+tile(dp+' / 7','📆 Days practised')+tile(dp?dur(tt/dp):'–','📈 Average per day practised')+tile(mx?DN[bi]+' · '+dur(mx):'–','🏅 Best day')+tile(p,'🎯 Times played')+tile(sch?tk+' of '+sch:'–','✅ Tasks started')+'</div>'+
+   '<div class="bars">'+S.time.map((s,d)=>`<div class="bc"><small>${s?Math.round(s/60)+'m':''}</small><div class="bb ${d==today?'tdb':''}" style="height:${s?Math.max(4,s/mx*90):0}px"></div><span>${DN[d].slice(0,3)}</span></div>`).join('')+'</div>'+
+   (p?'<div class="meta">Played this week: '+ORD.filter(k=>bt[k]).map(k=>T[k][0]+' '+T[k][1]+' ×'+bt[k]).join(' · ')+'</div>':'')+
+   '<h3>🏆 Totals</h3><div class="stats">'+tile(dur(all),'⌛ All-time practice')+tile(wks,'🗓 Weeks tracked')+tile(dur(all/wks),'📊 Average per week')+'</div>';
+  if(S.hist.length)h+='<h3>📜 Past weeks</h3>'+S.hist.slice(-8).reverse().map(w=>`<div class="hw"><span>Week of ${wkLabel(w.wk)}</span><span>${dur(w.t)} · ${w.p} plays · ${w.td} days</span></div>`).join('');
+  $('sum').innerHTML=h;
+}
+function R(){rNow();rSum();rLib();rWeek();save()}
+function setSel(d){sel=d;$('swd').value=d;rNow();smsg()}
+function go(d){setSel(d);window.scrollTo({top:$('now').offsetTop-10,behavior:'smooth'})}
+function adj(d,id,x){const k=d+'-'+id;S.cnt[k]=Math.max(0,cnt(d,id)+x);R()}
+function adjT(d,x){S.time[d]=Math.max(0,S.time[d]+x);R()}
+function tog(id,d){const p=S.plan[d],i=p.indexOf(id);i<0?p.push(id):p.splice(i,1);R()}
+function allDays(id){const all=S.plan.every(p=>p.includes(id));S.plan.forEach((p,d)=>{const i=p.indexOf(id);if(all){if(i>=0)p.splice(i,1)}else if(i<0)p.push(id)});R()}
+function addTo(d,v){if(v){S.plan[d].push(+v);R()}}
+function retire(id,v){item(id).retired=v;delId=0;R()}
+function del(id){if(delId!=id){delId=id;rLib();return}S.items=S.items.filter(i=>i.id!==id);S.plan.forEach((p,d)=>S.plan[d]=p.filter(x=>x!==id));delId=0;R()}
+function note(el){const d=+el.dataset.d;S.notes[d]=el.value;save();document.querySelectorAll('textarea[data-d="'+d+'"]').forEach(t=>{if(t!==el)t.value=el.value})}
+function addItem(){const i=$('n'),v=i.value.trim();if(!v)return;S.items.push({id:S.next++,name:v,type:$('ty').value,retired:false});i.value='';i.focus();R()}
+$('add').onclick=addItem;
+$('n').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();addItem()}});
+$('ty').innerHTML=ORD.map(k=>`<option value="${k}">${T[k][0]} ${T[k][1]}</option>`).join('');
+$('swd').innerHTML=DN.map((n,i)=>`<option value="${i}">${n}</option>`).join('');
+$('swd').value=today;$('swd').onchange=function(){setSel(+this.value)};
+
+let armed=false,tm;
+$('nw').onclick=function(){
+  if(!armed){armed=true;this.textContent='Tap again to save this week & start a new one';tm=setTimeout(()=>{armed=false;this.textContent='🔄 Start a new week'},4000);return}
+  clearTimeout(tm);armed=false;this.textContent='🔄 Start a new week';
+  const tt=wkT(),pl=wkPlays().p;if(tt>0||pl>0){S.hist.push({wk:S.wk,t:tt,p:pl,td:S.time.filter(x=>x>0).length});if(S.hist.length>52)S.hist.shift()}
+  S.wk=weekStart();S.cnt={};S.time=[0,0,0,0,0,0,0];S.notes=['','','','','','',''];R();
+};
+
+// Stopwatch
+let run=false,st=0,el=0,raf;
+const fmt=ms=>{const s=Math.floor(ms/1000);return [Math.floor(s/3600),Math.floor(s/60)%60,s%60].map(x=>String(x).padStart(2,'0')).join(':')};
+function tick(){const tx=fmt(el+(run?performance.now()-st:0));$('time').textContent=tx;$('swS').textContent=(run||el)?tx:'';if(run)raf=requestAnimationFrame(tick)}
+function smsg(t){$('swm').textContent=t||''}
+$('go').onclick=()=>{
+  if(run){el+=performance.now()-st;run=false;$('go').textContent='▶ Resume';cancelAnimationFrame(raf);tick()}
+  else{st=performance.now();run=true;$('go').textContent='⏸ Pause';tick()}
+};
+$('sv').onclick=()=>{
+  const total=Math.round((el+(run?performance.now()-st:0))/1000);
+  if(!total){smsg('Start the timer first!');return}
+  const d=+$('swd').value;S.time[d]+=total;
+  run=false;el=0;cancelAnimationFrame(raf);$('go').textContent='▶ Start';tick();R();smsg('✅ Saved '+dur(total)+' to '+DN[d]+'!');
+};
+$('rs').onclick=()=>{run=false;el=0;cancelAnimationFrame(raf);$('go').textContent='▶ Start';tick();smsg('')};
+// Wheel
+const WC=['#ffb3c7','#ffd9a0','#fff1a0','#b8f0b0','#a8e4f5','#c9b8ff'];
+let rot=0,spinning=false;
+$('wt').innerHTML=ORD.map(k=>`<option value="${k}">${T[k][0]} ${T[k][1]}s</option>`).join('');
+function rWheel(){
+  $('wl2').innerHTML=S.wheel.map((w,i)=>`<span class="c2">${esc(w)}<button title="Remove" onclick="wdel(${i})">✕</button></span>`).join('')||'<div class="meta">Add things to the wheel!</div>';
+  draw();
+}
+function wdel(i){S.wheel.splice(i,1);save();rWheel()}
+function wadd(v){v=v.trim();if(v&&!S.wheel.includes(v))S.wheel.push(v)}
+function draw(){
+  const c=$('wc'),x=c.getContext('2d'),W=c.width,r=W/2-6,n=S.wheel.length,TP=Math.PI*2;
+  x.clearRect(0,0,W,W);x.save();x.translate(W/2,W/2);
+  if(!n){x.beginPath();x.arc(0,0,r,0,TP);x.fillStyle='#ddd';x.fill();x.fillStyle='#555';x.font='bold 38px Trebuchet MS,sans-serif';x.textAlign='center';x.fillText('Add things!',0,12)}
+  else{
+    const a=TP/n,fs=Math.max(16,Math.min(34,Math.round(300/n+14)));
+    for(let i=0;i<n;i++){
+      let ci=i%WC.length;if(i==n-1&&n>1&&ci==0)ci=2;
+      x.beginPath();x.moveTo(0,0);x.arc(0,0,r,rot+i*a,rot+(i+1)*a);x.closePath();
+      x.fillStyle=WC[ci];x.fill();x.lineWidth=3;x.strokeStyle='#fff';x.stroke();
+      x.save();x.rotate(rot+(i+.5)*a);x.textAlign='right';x.fillStyle='#2b2350';x.font='bold '+fs+'px Trebuchet MS,sans-serif';
+      const w=S.wheel[i];x.fillText(w.length>16?w.slice(0,15)+'…':w,r-22,fs/3);x.restore();
+    }
+    x.beginPath();x.arc(0,0,30,0,TP);x.fillStyle='#fff';x.fill();x.lineWidth=4;x.strokeStyle='#7c4dff';x.stroke();
+  }
+  x.restore();
+}
+function spin(){
+  const n=S.wheel.length;if(!n||spinning)return;
+  spinning=true;$('wr').textContent='';$('spin').disabled=true;
+  const r0=rot,d=Math.PI*2*(5+Math.random()*3)+Math.random()*6.28,t0=performance.now(),D=4500;
+  (function f(t){
+    const p=Math.min(1,(t-t0)/D),e=1-Math.pow(1-p,3);rot=r0+d*e;draw();
+    if(p<1){requestAnimationFrame(f);return}
+    spinning=false;$('spin').disabled=false;rot%=Math.PI*2;
+    const m=S.wheel.length,a=((-Math.PI/2-rot)%(Math.PI*2)+Math.PI*2)%(Math.PI*2),i=Math.floor(a/(Math.PI*2/m))%m;
+    $('wr').textContent='🎉 '+S.wheel[i]+'!';
+  })(t0);
+}
+function wInput(){const i=$('wi');wadd(i.value);i.value='';i.focus();save();rWheel()}
+$('wa').onclick=wInput;
+$('wi').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();wInput()}});
+$('wl').onclick=()=>{const t=$('wt').value;S.items.filter(i=>!i.retired&&i.type===t).forEach(i=>wadd(i.name));save();rWheel()};
+$('spin').onclick=spin;
+document.addEventListener('toggle',e=>{const k=e.target.dataset&&e.target.dataset.k;if(k){S.ui[k]=e.target.open;save()}},true);
+document.querySelectorAll('details[data-k]').forEach(d=>{if(S.ui[d.dataset.k]===false)d.open=false});
+R();rWheel();
+</script>
+</body>
+</html>
