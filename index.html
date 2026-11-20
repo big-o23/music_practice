@@ -411,7 +411,13 @@ async function dl(name,text){
   try{const d=window.claude&&await claude.use("downloads");
     if(d){await d.save({filename:name,data:text});xm('✅ Saved '+name);return}}
   catch(e){if(e&&e.code==='declined'){xm('Download cancelled.');return}}
-  if(window.claude){showTxt(text,'File downloads aren’t available in this view, so here is the text instead (save it as '+name+'). ');return}
+  if(window.claude){
+    try{const f=new File([text],name,{type:name.endsWith('.csv')?'text/csv':'application/json'});
+      if(navigator.canShare&&navigator.canShare({files:[f]})){await navigator.share({files:[f],title:name});xm('✅ Shared '+name);return}}
+    catch(e){if(e&&e.name==='AbortError'){xm('Share cancelled.');return}}
+    try{if(window.showSaveFilePicker){const h=await showSaveFilePicker({suggestedName:name}),w=await h.createWritable();await w.write(text);await w.close();xm('✅ Saved '+name);return}}
+    catch(e){if(e&&e.name==='AbortError'){xm('Save cancelled.');return}}
+    showTxt(text,'This view can’t save files, so here is the text instead — paste it into a note or email to keep it safe. ');return}
   try{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([text],{type:'application/octet-stream'}));a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),4000);xm('⬇ Download started. If nothing downloaded, use “Show & copy backup text”.')}
   catch(e){showTxt(text,'The download didn’t work, so here is the text instead. ')}
 }
