@@ -48,6 +48,23 @@ textarea{width:100%;min-height:70px;resize:vertical}
 .grid .card{margin:0}
 .grid .card.td{border-color:var(--pri)}
 .dt{font-weight:normal;color:var(--mute);font-size:.9rem}
+input[type=range]{width:100%;accent-color:var(--pri)}
+.bpmrow{display:flex;align-items:center;justify-content:center;gap:18px;margin:6px 0}
+.bpmrow button{width:50px;height:50px;font-size:1.6rem;padding:0}
+#bpm{font-size:3rem;font-weight:bold;font-family:"Courier New",monospace}
+.dots{display:flex;gap:10px;justify-content:center;margin-top:12px}
+.bd{width:22px;height:22px;border-radius:50%;background:var(--line);display:inline-block}
+.bd.ac{border:3px solid var(--pri)}
+.bd.on{background:var(--pri)}
+.wknav{display:flex;gap:8px;flex-wrap:wrap;align-items:center;justify-content:center;margin-bottom:12px}
+.cmh{display:flex;justify-content:space-between;align-items:center;margin:10px 0}
+.cal{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+.cw{text-align:center;color:var(--mute);font-size:.8rem}
+.cd{border-radius:12px;padding:6px 0;min-height:50px}
+.cd small{display:block;font-size:.65rem;color:var(--mute);min-height:1em;font-weight:normal}
+.cd.cv{background:var(--hi)}
+.cd.cp{border-color:var(--ok)}
+.cd.ct{border-color:var(--pri)}
 .tag{background:var(--hi);border-radius:99px;padding:2px 10px;font-size:.8rem;margin-left:6px}
 .c2{--c:#888;display:inline-flex;align-items:center;gap:4px;margin:3px 3px 3px 0;padding:4px 6px 4px 10px;border-radius:99px;border:2px solid var(--c);background:color-mix(in srgb,var(--c) 14%,var(--card));font-size:.9rem}
 .c2 button{border:none;background:none;padding:0 4px;color:var(--mute)}
@@ -94,12 +111,23 @@ h3{margin:16px 0 8px;font-size:1.05rem}
   <div class="row">Add my time to: <select id="swd"></select><span id="swm" class="meta"></span></div>
 </details>
 
+<details class="card" data-k="met" open><summary>🥁 Metronome <span id="metS" class="meta"></span></summary>
+  <div style="text-align:center">
+    <div class="bpmrow"><button id="mm">−</button><div><span id="bpm">100</span><small> BPM</small><div id="tn" class="meta"></div></div><button id="mp">+</button></div>
+    <input type="range" id="msl" min="30" max="240">
+    <div class="row"><button class="p big" id="mgo">▶ Start</button><button id="mtap">👆 Tap tempo</button></div>
+    <div class="row">Beats per bar: <select id="mbt"></select> 🔊 <input type="range" id="mvol" min="1" max="100" style="width:120px"></div>
+    <div id="dots" class="dots"></div>
+  </div>
+</details>
+
 <details class="card" data-k="now" open><summary id="nowT"></summary><div id="now"></div></details>
 
 <details class="card" data-k="sum" open><summary>📊 Weekly Summary</summary><div id="sum"></div></details>
 
-<details class="card" data-k="week" open><summary>📅 My Week</summary><div class="grid" id="week"></div>
-<div class="foot"><button id="nw">🔄 Start a new week</button></div>
+<details class="card" data-k="cal" open><summary>🗓 Calendar</summary><div id="cal"></div></details>
+
+<details class="card" data-k="week" open><summary>📅 My Week</summary><div id="wkbar1"></div><div class="grid" id="week"></div>
 </details>
 
 <details class="card" data-k="lib" open><summary>📚 My Music Library</summary>
@@ -141,34 +169,42 @@ h3{margin:16px 0 8px;font-size:1.05rem}
 const DN=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
 const T={piece:['🎵','Piece','#8e5bd6'],theory:['📖','Theory','#2d8fe0'],scale:['🎹','Scale','#f08a24'],arpeggio:['🌈','Arpeggio','#e0488f'],exercise:['💪','Exercise','#26a96c']};
 const ORD=Object.keys(T),today=new Date().getDay();
-let S={items:[],plan:[[],[],[],[],[],[],[]],cnt:{},notes:['','','','','','',''],time:[0,0,0,0,0,0,0],next:1,wheel:[],wk:weekStart(),hist:[],ui:{}};
+let S={items:[],plan:[[],[],[],[],[],[],[]],next:1,wheel:[],hist:[],ui:{},weeks:{},met:{bpm:100,beats:4,vol:60}};
+function blankWk(){return{time:[0,0,0,0,0,0,0],cnt:{},notes:['','','','','','','']}}
+function mig(o){if(!o.weeks)o.weeks={};if(o.wk&&o.time&&!o.weeks[o.wk])o.weeks[o.wk]={time:o.time,cnt:o.cnt||{},notes:o.notes||['','','','','','','']};delete o.wk;delete o.time;delete o.cnt;delete o.notes;if(!o.met)o.met={bpm:100,beats:4,vol:60};return o}
 try{const x=JSON.parse(localStorage.getItem('practice2')||'null');if(x)S=Object.assign(S,x)}catch(e){}
+mig(S);
 let sel=today,delId=0,editId=0;
 const $=id=>document.getElementById(id);
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const save=()=>{try{localStorage.setItem('practice2',JSON.stringify(S))}catch(e){}};
 const dur=s=>{s=Math.round(s);if(s<60)return s+' sec';const h=Math.floor(s/3600),m=Math.floor(s%3600/60),x=s%60;return (h?h+' hr ':'')+(m||h?m+' min':'')+(!h&&x?' '+x+' sec':'')};
-function weekStart(){const d=new Date();d.setDate(d.getDate()-d.getDay());return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
-const wkLabel=w=>new Date(w+'T00:00:00').toLocaleDateString(undefined,{day:'numeric',month:'short'});
 const ymd=x=>x.getFullYear()+'-'+String(x.getMonth()+1).padStart(2,'0')+'-'+String(x.getDate()).padStart(2,'0');
-function dateOf(d){const x=new Date(S.wk+'T00:00:00');x.setDate(x.getDate()+d);return x}
+const wsOf=x=>{const c=new Date(x);c.setDate(c.getDate()-c.getDay());return ymd(c)};
+function weekStart(){return wsOf(new Date())}
+let vw=weekStart(),cm=new Date(new Date().getFullYear(),new Date().getMonth(),1);
+function getW(w){return S.weeks[w||vw]||blankWk()}
+function setW(){return S.weeks[vw]||(S.weeks[vw]=blankWk())}
+const wkLabel=w=>new Date(w+'T00:00:00').toLocaleDateString(undefined,{day:'numeric',month:'short'});
+function dateOf(d){const x=new Date(vw+'T00:00:00');x.setDate(x.getDate()+d);return x}
+const isT=d=>ymd(dateOf(d))===ymd(new Date());
 const dLbl=d=>dateOf(d).toLocaleDateString(undefined,{day:'numeric',month:'short'});
-const wkT=()=>S.time.reduce((a,b)=>a+b,0);
+const wkT=w=>getW(w).time.reduce((a,b)=>a+b,0);
 const item=id=>S.items.find(i=>i.id===id);
 const dayItems=d=>S.plan[d].map(item).filter(i=>i&&!i.retired);
-const cnt=(d,id)=>S.cnt[d+'-'+id]||0;
+const cnt=(d,id,w)=>getW(w).cnt[d+'-'+id]||0;
 
 function rNow(){
   const d=sel,its=dayItems(d),done=its.filter(i=>cnt(d,i.id)>0).length;
-  $('nowT').textContent=d==today?"⭐ It's "+DN[d]+", "+dLbl(d)+"! Today's practice":"📝 "+DN[d]+", "+dLbl(d)+" — practice";
+  $('nowT').textContent=isT(d)?"⭐ It's "+DN[d]+", "+dLbl(d)+"! Today's practice":"📝 "+DN[d]+", "+dLbl(d)+" — practice";
   let h='<div class="chips">'+
-   DN.map((n,i)=>`<button class="chip ${i==sel?'on':''} ${i==today?'td':''}" onclick="setSel(${i})">${n.slice(0,3)}${i==today?' •':''}<small style="display:block;font-weight:normal">${dLbl(i)}</small></button>`).join('')+'</div>';
+   DN.map((n,i)=>`<button class="chip ${i==sel?'on':''} ${isT(i)?'td':''}" onclick="setSel(${i})">${n.slice(0,3)}${isT(i)?' •':''}<small style="display:block;font-weight:normal">${dLbl(i)}</small></button>`).join('')+'</div>';
   if(!its.length)h+=`<div class="empty">Nothing planned for ${DN[d]} yet. Add music from the library or the week plan below! 🎶</div>`;
   its.forEach(i=>{const n=cnt(d,i.id),t=T[i.type];
     h+=`<div class="it ${n?'done':''}" style="--c:${t[2]}"><div class="nm">${n?'✅':t[0]} ${esc(i.name)}<small>${t[1]}</small></div><div class="cn"><button onclick="adj(${d},${i.id},-1)">−</button><b>${n}</b><button class="p" onclick="adj(${d},${i.id},1)">+</button></div></div>`});
   if(its.length){h+=`<div class="bar"><i style="width:${done/its.length*100}%"></i></div><div class="msg">${done==its.length?'🌟 Amazing! You finished everything! 🎉':done+' of '+its.length+' started — keep going! 💪'}</div>`}
-  h+=`<div class="meta">⏱ Practice time for ${DN[d]}: <b>${dur(S.time[d])}</b> · This week: <b>${dur(wkT())}</b> <button class="sm" onclick="adjT(${d},300)">+5 min</button> <button class="sm" onclick="adjT(${d},-300)">−5 min</button></div>
-   <textarea data-d="${d}" oninput="note(this)" placeholder="📓 Notes for ${DN[d]}: what went well? what to work on?">${esc(S.notes[d])}</textarea>`;
+  h+=`<div class="meta">⏱ Practice time for ${DN[d]}: <b>${dur(getW().time[d])}</b> · This week: <b>${dur(wkT())}</b> <button class="sm" onclick="adjT(${d},300)">+5 min</button> <button class="sm" onclick="adjT(${d},-300)">−5 min</button></div>
+   <textarea data-d="${d}" oninput="note(this)" placeholder="📓 Notes for ${DN[d]}: what went well? what to work on?">${esc(getW().notes[d])}</textarea>`;
   $('now').innerHTML=h;
 }
 function rLib(){
@@ -185,30 +221,48 @@ function rLib(){
 function rWeek(){
   $('week').innerHTML=DN.map((n,d)=>{
     const its=dayItems(d),free=S.items.filter(i=>!i.retired&&!S.plan[d].includes(i.id));
-    return `<details class="card ${d==today?'td':''}" data-k="day${d}" ${S.ui['day'+d]===false?'':'open'}><summary>${n}<span class="dt">${dLbl(d)}</span>${d==today?'<span class="tag">today</span>':''}</summary>`+
+    return `<details class="card ${isT(d)?'td':''}" data-k="day${d}" ${S.ui['day'+d]===false?'':'open'}><summary>${n}<span class="dt">${dLbl(d)}</span>${isT(d)?'<span class="tag">today</span>':''}</summary>`+
      (its.length?its.map(i=>{const k=cnt(d,i.id);return `<span class="c2" style="--c:${T[i.type][2]}">${T[i.type][0]} ${esc(i.name)}${k?' ×'+k:''}<button title="Remove from ${n}" onclick="tog(${i.id},${d})">✕</button></span>`}).join(''):'<div class="meta">Nothing planned yet</div>')+
      (free.length?`<div class="row" style="justify-content:flex-start"><select onchange="addTo(${d},this.value)"><option value="">➕ Add to ${n}…</option>${free.map(i=>`<option value="${i.id}">${T[i.type][0]} ${esc(i.name)}</option>`).join('')}</select></div>`:'')+
-     `<div class="meta">⏱ ${dur(S.time[d])}</div><textarea data-d="${d}" oninput="note(this)" placeholder="📓 Notes for ${n}…">${esc(S.notes[d])}</textarea><div class="row" style="justify-content:flex-start"><button class="sm p" onclick="go(${d})">👉 Practice this day</button></div></details>`}).join('');
+     `<div class="meta">⏱ ${dur(getW().time[d])}</div><textarea data-d="${d}" oninput="note(this)" placeholder="📓 Notes for ${n}…">${esc(getW().notes[d])}</textarea><div class="row" style="justify-content:flex-start"><button class="sm p" onclick="go(${d})">👉 Practice this day</button></div></details>`}).join('');
 }
-function wkPlays(){let p=0;const bt={};S.items.forEach(i=>{for(let d=0;d<7;d++){const n=cnt(d,i.id);p+=n;bt[i.type]=(bt[i.type]||0)+n}});return{p,bt}}
+function wkPlays(w){let p=0;const bt={},c=getW(w).cnt;S.items.forEach(i=>{for(let d=0;d<7;d++){const n=c[d+'-'+i.id]||0;p+=n;bt[i.type]=(bt[i.type]||0)+n}});return{p,bt}}
+const wkActive=()=>Object.keys(S.weeks).filter(w=>{const x=S.weeks[w];return x.time.some(t=>t>0)||Object.values(x.cnt).some(n=>n>0)}).sort();
+const nav=()=>`<div class="wknav"><button onclick="goWk(-1)">‹ Previous week</button><b>${dLbl(0)} – ${dLbl(6)}</b><button onclick="goWk(1)">Next week ›</button>${vw!==weekStart()?'<button class="p" onclick="goToday()">Today</button>':''}</div>`;
+function goWk(n){const x=new Date(vw+'T00:00:00');x.setDate(x.getDate()+7*n);vw=ymd(x);cm=new Date(x.getFullYear(),x.getMonth(),1);R()}
+function goToday(){vw=weekStart();sel=today;cm=new Date(new Date().getFullYear(),new Date().getMonth(),1);R()}
+function goDate(t){const x=new Date(t+'T00:00:00');vw=wsOf(x);sel=x.getDay();R()}
+function jump(w){vw=w;R();window.scrollTo({top:$('sum').offsetTop-10,behavior:'smooth'})}
+function cmv(n){cm=new Date(cm.getFullYear(),cm.getMonth()+n,1);rCal()}
+function rCal(){
+  const y=cm.getFullYear(),m=cm.getMonth(),first=new Date(y,m,1).getDay(),nd=new Date(y,m+1,0).getDate(),ts=ymd(new Date());
+  let h=nav()+`<div class="cmh"><button class="sm" onclick="cmv(-1)">‹</button><b>${cm.toLocaleDateString(undefined,{month:'long',year:'numeric'})}</b><button class="sm" onclick="cmv(1)">›</button></div><div class="cal">`+DN.map(x=>`<div class="cw">${x[0]}</div>`).join('');
+  for(let i=0;i<first;i++)h+='<div></div>';
+  for(let k=1;k<=nd;k++){const x=new Date(y,m,k),t=ymd(x),w=S.weeks[wsOf(x)],sec=w?w.time[x.getDay()]:0;
+    h+=`<button class="cd ${t==ts?'ct':''} ${wsOf(x)==vw?'cv':''} ${sec?'cp':''}" onclick="goDate('${t}')">${k}<small>${sec?Math.max(1,Math.round(sec/60))+'m':''}</small></button>`}
+  $('cal').innerHTML=h+'</div><div class="meta">Tap a date to jump to that day. Minutes practised show under each date.</div>';
+}
 function rSum(){
-  const tt=wkT(),dp=S.time.filter(x=>x>0).length,mx=Math.max(...S.time),bi=S.time.indexOf(mx),{p,bt}=wkPlays();
+  const tm=getW().time,tt=wkT(),dp=tm.filter(x=>x>0).length,mx=Math.max(...tm),bi=tm.indexOf(mx),{p,bt}=wkPlays();
   let sch=0,tk=0;for(let d=0;d<7;d++)dayItems(d).forEach(i=>{sch++;if(cnt(d,i.id)>0)tk++});
-  const all=S.hist.reduce((a,h)=>a+h.t,0)+tt,wks=S.hist.length+1,tile=(b,l)=>`<div class="st"><small>${l}</small><b>${b}</b></div>`;
-  let h=(weekStart()>S.wk?'<div class="msg">🆕 A new week has started! Tap “Start a new week” in My Week to save last week into your totals.</div>':'')+
-   `<div class="meta">Week starting Sunday ${wkLabel(S.wk)}</div><div class="stats">`+
+  const ws=wkActive(),old=S.hist||[],all=ws.reduce((a,w)=>a+wkT(w),0)+old.reduce((a,x)=>a+x.t,0),wks=ws.length+old.length,tile=(b,l)=>`<div class="st"><small>${l}</small><b>${b}</b></div>`;
+  let h=`<div class="meta">Week of ${dLbl(0)} – ${dLbl(6)}</div><div class="stats">`+
    tile(dur(tt),'⏱ Time this week')+tile(dp+' / 7','📆 Days practised')+tile(dp?dur(tt/dp):'–','📈 Average per day practised')+tile(mx?DN[bi]+' · '+dur(mx):'–','🏅 Best day')+tile(p,'🎯 Times played')+tile(sch?tk+' of '+sch:'–','✅ Tasks started')+'</div>'+
-   '<div class="bars">'+S.time.map((s,d)=>`<div class="bc"><small>${s?Math.round(s/60)+'m':''}</small><div class="bb ${d==today?'tdb':''}" style="height:${s?Math.max(4,s/mx*90):0}px"></div><span>${DN[d].slice(0,3)}<br>${dateOf(d).getDate()}</span></div>`).join('')+'</div>'+
+   '<div class="bars">'+tm.map((s,d)=>`<div class="bc"><small>${s?Math.round(s/60)+'m':''}</small><div class="bb ${isT(d)?'tdb':''}" style="height:${s?Math.max(4,s/mx*90):0}px"></div><span>${DN[d].slice(0,3)}<br>${dateOf(d).getDate()}</span></div>`).join('')+'</div>'+
    (p?'<div class="meta">Played this week: '+ORD.filter(k=>bt[k]).map(k=>T[k][0]+' '+T[k][1]+' ×'+bt[k]).join(' · ')+'</div>':'')+
-   '<h3>🏆 Totals</h3><div class="stats">'+tile(dur(all),'⌛ All-time practice')+tile(wks,'🗓 Weeks tracked')+tile(dur(all/wks),'📊 Average per week')+'</div>';
-  if(S.hist.length)h+='<h3>📜 Past weeks</h3>'+S.hist.slice(-8).reverse().map(w=>`<div class="hw"><span>Week of ${wkLabel(w.wk)}</span><span>${dur(w.t)} · ${w.p} plays · ${w.td} days</span></div>`).join('');
+   '<h3>🏆 Totals</h3><div class="stats">'+tile(dur(all),'⌛ All-time practice')+tile(wks,'🗓 Weeks tracked')+tile(wks?dur(all/wks):'–','📊 Average per week')+'</div>';
+  if(wks){h+='<h3>📜 Past weeks <small style="font-weight:normal;color:var(--mute)">(tap to open)</small></h3>';
+    ws.slice().reverse().slice(0,8).forEach(w=>{const x=S.weeks[w],pl=Object.values(x.cnt).reduce((a,b)=>a+b,0),dd=x.time.filter(t=>t>0).length;
+      h+=`<div class="hw" style="cursor:pointer" onclick="jump('${w}')"><span>Week of ${wkLabel(w)}</span><span>${dur(wkT(w))} · ${pl} plays · ${dd} days</span></div>`});
+    old.slice(-4).reverse().forEach(x=>{h+=`<div class="hw"><span>Week of ${wkLabel(x.wk)}</span><span>${dur(x.t)} · ${x.p} plays · ${x.td} days</span></div>`})}
   $('sum').innerHTML=h;
 }
-function R(){rNow();rSum();rLib();rWeek();save()}
+function fillSwd(){$('swd').innerHTML=DN.map((n,i)=>`<option value="${i}">${n} ${dLbl(i)}</option>`).join('');$('swd').value=sel}
+function R(){fillSwd();rNow();rSum();rCal();rLib();$('wkbar1').innerHTML=nav();rWeek();save()}
 function setSel(d){sel=d;$('swd').value=d;rNow();smsg()}
 function go(d){setSel(d);window.scrollTo({top:$('now').offsetTop-10,behavior:'smooth'})}
-function adj(d,id,x){const k=d+'-'+id;S.cnt[k]=Math.max(0,cnt(d,id)+x);R()}
-function adjT(d,x){S.time[d]=Math.max(0,S.time[d]+x);R()}
+function adj(d,id,x){const k=d+'-'+id,w=setW();w.cnt[k]=Math.max(0,cnt(d,id)+x);R()}
+function adjT(d,x){const w=setW();w.time[d]=Math.max(0,w.time[d]+x);R()}
 function tog(id,d){const p=S.plan[d],i=p.indexOf(id);i<0?p.push(id):p.splice(i,1);R()}
 function edRow(i){return `<div class="lib" style="--c:${T[i.type][2]}"><input type="text" id="en" value="${esc(i.name)}" style="flex:1;min-width:160px" onkeydown="if(event.key==='Enter')saveEd(${i.id});if(event.key==='Escape')edit(0)"><select id="et">${ORD.map(k=>`<option value="${k}" ${k===i.type?'selected':''}>${T[k][0]} ${T[k][1]}</option>`).join('')}</select><div><button class="sm p" onclick="saveEd(${i.id})">💾 Save</button> <button class="sm" onclick="edit(0)">Cancel</button></div></div>`}
 function edit(id){editId=id;rLib();if(id){const e=$('en');e.focus();e.select()}}
@@ -216,22 +270,13 @@ function saveEd(id){const i=item(id),v=$('en').value.trim();if(!v)return;const o
 function allDays(id){const all=S.plan.every(p=>p.includes(id));S.plan.forEach((p,d)=>{const i=p.indexOf(id);if(all){if(i>=0)p.splice(i,1)}else if(i<0)p.push(id)});R()}
 function addTo(d,v){if(v){S.plan[d].push(+v);R()}}
 function retire(id,v){item(id).retired=v;delId=0;R()}
-function del(id){if(delId!=id){delId=id;rLib();return}S.items=S.items.filter(i=>i.id!==id);S.plan.forEach((p,d)=>S.plan[d]=p.filter(x=>x!==id));delId=0;R()}
-function note(el){const d=+el.dataset.d;S.notes[d]=el.value;save();document.querySelectorAll('textarea[data-d="'+d+'"]').forEach(t=>{if(t!==el)t.value=el.value})}
+function del(id){if(delId!=id){delId=id;rLib();return}S.items=S.items.filter(i=>i.id!==id);Object.values(S.weeks).forEach(w=>Object.keys(w.cnt).forEach(k=>{if(k.split('-')[1]==id)delete w.cnt[k]}));S.plan.forEach((p,d)=>S.plan[d]=p.filter(x=>x!==id));delId=0;R()}
+function note(el){const d=+el.dataset.d;setW().notes[d]=el.value;save();document.querySelectorAll('textarea[data-d="'+d+'"]').forEach(t=>{if(t!==el)t.value=el.value})}
 function addItem(){const i=$('n'),v=i.value.trim();if(!v)return;S.items.push({id:S.next++,name:v,type:$('ty').value,retired:false});i.value='';i.focus();R()}
 $('add').onclick=addItem;
 $('n').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();addItem()}});
 $('ty').innerHTML=ORD.map(k=>`<option value="${k}">${T[k][0]} ${T[k][1]}</option>`).join('');
-$('swd').innerHTML=DN.map((n,i)=>`<option value="${i}">${n}</option>`).join('');
-$('swd').value=today;$('swd').onchange=function(){setSel(+this.value)};
-
-let armed=false,tm;
-$('nw').onclick=function(){
-  if(!armed){armed=true;this.textContent='Tap again to save this week & start a new one';tm=setTimeout(()=>{armed=false;this.textContent='🔄 Start a new week'},4000);return}
-  clearTimeout(tm);armed=false;this.textContent='🔄 Start a new week';
-  const tt=wkT(),pl=wkPlays().p;if(tt>0||pl>0){S.hist.push({wk:S.wk,t:tt,p:pl,td:S.time.filter(x=>x>0).length});if(S.hist.length>52)S.hist.shift()}
-  S.wk=weekStart();S.cnt={};S.time=[0,0,0,0,0,0,0];S.notes=['','','','','','',''];R();
-};
+$('swd').onchange=function(){setSel(+this.value)};
 
 // Stopwatch
 let run=false,st=0,el=0,raf;
@@ -245,7 +290,7 @@ $('go').onclick=()=>{
 $('sv').onclick=()=>{
   const total=Math.round((el+(run?performance.now()-st:0))/1000);
   if(!total){smsg('Start the timer first!');return}
-  const d=+$('swd').value;S.time[d]+=total;
+  const d=+$('swd').value;setW().time[d]+=total;
   run=false;el=0;cancelAnimationFrame(raf);$('go').textContent='▶ Start';tick();R();smsg('✅ Saved '+dur(total)+' to '+DN[d]+'!');
 };
 $('rs').onclick=()=>{run=false;el=0;cancelAnimationFrame(raf);$('go').textContent='▶ Start';tick();smsg('')};
@@ -293,20 +338,43 @@ $('wa').onclick=wInput;
 $('wi').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();wInput()}});
 $('wl').onclick=()=>{const t=$('wt').value;S.items.filter(i=>!i.retired&&i.type===t).forEach(i=>wadd(i.name));save();rWheel()};
 $('spin').onclick=spin;
+// Metronome
+let ac,mOn=false,mNext=0,mBeat=0,mTimer,taps=[];
+const TN=b=>b<60?'Largo':b<76?'Adagio':b<108?'Andante':b<120?'Moderato':b<156?'Allegro':b<200?'Vivace':'Presto';
+$('mbt').innerHTML=[1,2,3,4,5,6,7,8].map(n=>`<option>${n}</option>`).join('');
+function mUI(){const m=S.met;$('bpm').textContent=m.bpm;$('tn').textContent=TN(m.bpm);$('msl').value=m.bpm;$('mbt').value=m.beats;$('mvol').value=m.vol;
+  $('dots').innerHTML=Array.from({length:m.beats},(_,i)=>`<i class="bd ${i?'':'ac'}"></i>`).join('');$('metS').textContent=mOn?'● '+m.bpm+' BPM':''}
+function mSet(b){S.met.bpm=Math.max(30,Math.min(240,Math.round(b)));save();mUI()}
+function clk(t,acc){const o=ac.createOscillator(),g=ac.createGain(),v=Math.max(.001,S.met.vol/100);o.type='triangle';o.frequency.value=acc?1320:880;
+  g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(v*(acc?1:.7),t+.003);g.gain.exponentialRampToValueAtTime(.0001,t+.06);o.connect(g);g.connect(ac.destination);o.start(t);o.stop(t+.08)}
+function sched(){while(mNext<ac.currentTime+.12){const b=mBeat%S.met.beats;clk(mNext,b===0);
+  setTimeout(()=>{const d=$('dots').children[b];if(d){d.classList.add('on');setTimeout(()=>d.classList.remove('on'),110)}},Math.max(0,(mNext-ac.currentTime)*1000));
+  mNext+=60/S.met.bpm;mBeat++}}
+$('mgo').onclick=()=>{
+  if(mOn){mOn=false;clearInterval(mTimer);$('mgo').textContent='▶ Start';mUI();return}
+  try{ac=ac||new(window.AudioContext||window.webkitAudioContext)();if(ac.resume)ac.resume()}catch(e){$('metS').textContent='Sound is not available here';return}
+  mOn=true;mBeat=0;mNext=ac.currentTime+.05;sched();mTimer=setInterval(sched,25);$('mgo').textContent='⏹ Stop';mUI();
+};
+$('mm').onclick=()=>mSet(S.met.bpm-1);$('mp').onclick=()=>mSet(S.met.bpm+1);
+$('msl').oninput=()=>mSet(+$('msl').value);
+$('mbt').onchange=()=>{S.met.beats=+$('mbt').value;mBeat=0;save();mUI()};
+$('mvol').oninput=()=>{S.met.vol=+$('mvol').value;save()};
+$('mtap').onclick=()=>{const n=performance.now();if(taps.length&&n-taps[taps.length-1]>2000)taps=[];taps.push(n);if(taps.length>1){const t=taps.slice(-6);mSet(60000/((t[t.length-1]-t[0])/(t.length-1)))}};
+mUI();
+
 // Backup & export
-const blank=()=>({items:[],plan:[[],[],[],[],[],[],[]],cnt:{},notes:['','','','','','',''],time:[0,0,0,0,0,0,0],next:1,wheel:[],wk:weekStart(),hist:[],ui:{}});
+const blank=()=>({items:[],plan:[[],[],[],[],[],[],[]],next:1,wheel:[],hist:[],ui:{},weeks:{},met:{bpm:100,beats:4,vol:60}});
 const xm=t=>{$('xm').textContent=t};
 const backup=()=>JSON.stringify({app:'music-practice',version:2,exported:new Date().toISOString(),data:S},null,2);
 function csv(){
-  const q=v=>'"'+String(v).replace(/"/g,'""')+'"',L=[],row=a=>L.push(a.map(q).join(','));
+  const q=v=>'"'+String(v).replace(/"/g,'""')+'"',L=[],row=a=>L.push(a.map(q).join(',')),ws=Object.keys(S.weeks).sort(),dt=(w,d)=>{const x=new Date(w+'T00:00:00');x.setDate(x.getDate()+d);return ymd(x)};
   row(['MUSIC LIBRARY']);row(['Name','Type','Status','Days scheduled']);
   S.items.forEach(i=>row([i.name,T[i.type][1],i.retired?'Retired':'Active',DN.filter((n,d)=>S.plan[d].includes(i.id)).join(' ')]));
-  L.push('');row(['THIS WEEK (starting '+S.wk+')']);row(['Day','Date','Minutes practised','Notes']);
-  DN.forEach((n,d)=>row([n,ymd(dateOf(d)),(S.time[d]/60).toFixed(1),S.notes[d]]));
-  L.push('');row(['THIS WEEK PLAYS']);row(['Day','Date','Piece / task','Type','Times played']);
-  DN.forEach((n,d)=>S.plan[d].map(item).filter(Boolean).forEach(i=>row([n,ymd(dateOf(d)),i.name,T[i.type][1],cnt(d,i.id)])));
-  L.push('');row(['PAST WEEKS']);row(['Week starting','Minutes practised','Times played','Days practised']);
-  S.hist.forEach(h=>row([h.wk,(h.t/60).toFixed(1),h.p,h.td]));
+  L.push('');row(['PRACTICE LOG']);row(['Date','Day','Minutes practised','Notes']);
+  ws.forEach(w=>{const x=S.weeks[w];for(let d=0;d<7;d++)if(x.time[d]>0||x.notes[d])row([dt(w,d),DN[d],(x.time[d]/60).toFixed(1),x.notes[d]])});
+  L.push('');row(['PLAYS LOG']);row(['Date','Day','Piece / task','Type','Times played']);
+  ws.forEach(w=>{const x=S.weeks[w];Object.keys(x.cnt).forEach(k=>{const [d,id]=k.split('-').map(Number),n=x.cnt[k],i=item(id);if(n>0&&i)row([dt(w,d),DN[d],i.name,T[i.type][1],n])})});
+  if(S.hist&&S.hist.length){L.push('');row(['EARLIER WEEKS (totals only)']);row(['Week starting','Minutes practised','Times played','Days practised']);S.hist.forEach(h=>row([h.wk,(h.t/60).toFixed(1),h.p,h.td]))}
   return '\ufeff'+L.join('\r\n');
 }
 function dl(name,text,type){
@@ -326,7 +394,7 @@ $('xr').onclick=function(){
   const d=o&&o.data;if(!d||!Array.isArray(d.items)){xm('That doesn’t look like a music practice backup.');return}
   if(!arR){arR=true;this.textContent='Tap again to replace everything';tR=setTimeout(()=>{arR=false;this.textContent='♻ Restore from text below'},4000);return}
   clearTimeout(tR);arR=false;this.textContent='♻ Restore from text below';
-  S=Object.assign(blank(),d);save();R();rWheel();xm('✅ Restored!');
+  S=Object.assign(blank(),mig(d));save();R();rWheel();xm('✅ Restored!');
 };
 
 document.addEventListener('toggle',e=>{const k=e.target.dataset&&e.target.dataset.k;if(k){S.ui[k]=e.target.open;save()}},true);
