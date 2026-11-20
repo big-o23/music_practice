@@ -122,6 +122,19 @@ h3{margin:16px 0 8px;font-size:1.05rem}
     </div>
   </div>
 </details>
+
+<details class="card" data-k="bk"><summary>💾 Backup &amp; Export</summary>
+  <p class="meta">Save everything — music library, weekly plan, practice history, notes and the wheel — to a file you can keep or move to another device.</p>
+  <div class="row" style="justify-content:flex-start">
+    <button class="p" id="xj">⬇ Download backup (.json)</button>
+    <button id="xc">📊 Download spreadsheet (.csv)</button>
+    <button id="xt">📋 Show &amp; copy backup text</button>
+  </div>
+  <h3>Restore from a backup</h3>
+  <div class="row" style="justify-content:flex-start"><input type="file" id="xf" accept=".json,application/json"><button id="xr">♻ Restore from text below</button></div>
+  <textarea id="bk" style="margin-top:8px;min-height:130px" placeholder="Backup text appears here — or paste a backup here (or choose a file) to restore."></textarea>
+  <div id="xm" class="meta"></div>
+</details>
 </main>
 <script>
 const DN=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
@@ -276,8 +289,44 @@ $('wa').onclick=wInput;
 $('wi').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();wInput()}});
 $('wl').onclick=()=>{const t=$('wt').value;S.items.filter(i=>!i.retired&&i.type===t).forEach(i=>wadd(i.name));save();rWheel()};
 $('spin').onclick=spin;
+// Backup & export
+const blank=()=>({items:[],plan:[[],[],[],[],[],[],[]],cnt:{},notes:['','','','','','',''],time:[0,0,0,0,0,0,0],next:1,wheel:[],wk:weekStart(),hist:[],ui:{}});
+const xm=t=>{$('xm').textContent=t};
+const backup=()=>JSON.stringify({app:'music-practice',version:2,exported:new Date().toISOString(),data:S},null,2);
+function csv(){
+  const q=v=>'"'+String(v).replace(/"/g,'""')+'"',L=[],row=a=>L.push(a.map(q).join(','));
+  row(['MUSIC LIBRARY']);row(['Name','Type','Status','Days scheduled']);
+  S.items.forEach(i=>row([i.name,T[i.type][1],i.retired?'Retired':'Active',DN.filter((n,d)=>S.plan[d].includes(i.id)).join(' ')]));
+  L.push('');row(['THIS WEEK (starting '+S.wk+')']);row(['Day','Minutes practised','Notes']);
+  DN.forEach((n,d)=>row([n,(S.time[d]/60).toFixed(1),S.notes[d]]));
+  L.push('');row(['THIS WEEK PLAYS']);row(['Day','Piece / task','Type','Times played']);
+  DN.forEach((n,d)=>S.plan[d].map(item).filter(Boolean).forEach(i=>row([n,i.name,T[i.type][1],cnt(d,i.id)])));
+  L.push('');row(['PAST WEEKS']);row(['Week starting','Minutes practised','Times played','Days practised']);
+  S.hist.forEach(h=>row([h.wk,(h.t/60).toFixed(1),h.p,h.td]));
+  return '\ufeff'+L.join('\r\n');
+}
+function dl(name,text,type){
+  try{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([text],{type}));a.download=name;document.body.appendChild(a);a.click();a.remove();
+    xm('⬇ Download started. If nothing downloaded, use “Show & copy backup text” instead.')}
+  catch(e){xm('Downloads are blocked here — use “Show & copy backup text” instead.')}
+}
+const day=()=>new Date().toISOString().slice(0,10);
+$('xj').onclick=()=>dl('music-practice-backup-'+day()+'.json',backup(),'application/json');
+$('xc').onclick=()=>dl('music-practice-'+day()+'.csv',csv(),'text/csv');
+$('xt').onclick=()=>{const t=$('bk');t.value=backup();t.focus();t.select();
+  try{navigator.clipboard.writeText(t.value).then(()=>xm('📋 Copied! Paste it into a note or email to keep it safe.'),()=>xm('Backup text is shown — select it all and copy.'))}catch(e){xm('Backup text is shown — select it all and copy.')}};
+$('xf').onchange=function(){const f=this.files[0];if(!f)return;const rd=new FileReader();rd.onload=()=>{$('bk').value=rd.result;xm('Loaded “'+f.name+'”. Tap Restore to use it.')};rd.readAsText(f)};
+let arR=false,tR;
+$('xr').onclick=function(){
+  let o;try{o=JSON.parse($('bk').value)}catch(e){xm('Paste the backup text (or choose a backup file) first.');return}
+  const d=o&&o.data;if(!d||!Array.isArray(d.items)){xm('That doesn’t look like a music practice backup.');return}
+  if(!arR){arR=true;this.textContent='Tap again to replace everything';tR=setTimeout(()=>{arR=false;this.textContent='♻ Restore from text below'},4000);return}
+  clearTimeout(tR);arR=false;this.textContent='♻ Restore from text below';
+  S=Object.assign(blank(),d);save();R();rWheel();xm('✅ Restored!');
+};
+
 document.addEventListener('toggle',e=>{const k=e.target.dataset&&e.target.dataset.k;if(k){S.ui[k]=e.target.open;save()}},true);
-document.querySelectorAll('details[data-k]').forEach(d=>{if(S.ui[d.dataset.k]===false)d.open=false});
+document.querySelectorAll('details[data-k]').forEach(d=>{const u=S.ui[d.dataset.k];if(u!==undefined)d.open=u});
 R();rWheel();
 </script>
 </body>
